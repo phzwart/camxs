@@ -57,20 +57,17 @@ def parse_mask_defs(defs):
     for line in lines:
         keys = line.split(':')
         if len(keys)==2:
-            print(keys[0], keys[1])
             params = parse_it[ keys[0] ]( keys[1] )
             mask_params[ keys[0] ].append(  params )
     return mask_params
 
 
 def circle(Nx,Ny,params):
-    print params
     cx      = params['cx']
     cy      = params['cy']
     radius  = params['radius']
     inside  = params['inside']
     outside = params['outside']
-    print cx,cy
     x = np.linspace(0,Nx-1,Nx)
     y = np.linspace(0,Ny-1,Ny)
     X,Y = np.meshgrid(x,y)
@@ -83,7 +80,6 @@ def circle(Nx,Ny,params):
     return mask
 
 def rectangle(Nx,Ny,params):
-    print params
     xstart  = params['xstart' ]
     xstop   = params['xstop'  ]
     ystart  = params['ystart' ]
@@ -106,10 +102,12 @@ def auto_mask(img,val=0):
     mask[sel]=0
     return mask
 
+parse_it = {'rectangle':parse_rectangle, 'circle':parse_circle}
+build_it = {'rectangle':rectangle, 'circle':circle}
+
 def make_mask(panel, mask_defs):
     Ny,Nx = panel.shape
-    params = parse_mask_defs( mask_defs )
-    print params
+    params = parse_mask_defs( mask_defs.strip() )
     masks = []
     for key in params.keys():
         for this_param in params[key]:
@@ -119,15 +117,11 @@ def make_mask(panel, mask_defs):
     if len(masks)>1:
         for m in masks[1:]:
             result = result*m
-
     return result
-
-parse_it = {'rectangle':parse_rectangle, 'circle':parse_circle}
-build_it = {'rectangle':rectangle, 'circle':circle}
 
 def tst():
     circle_def = "circle:cx=200,cy=200,radius=50,inside=0,outside=1;"
-    rect_def = "rectangle:xstart=10,xstop=100,ystart=40,ystop=200,inside=0,outside=1;"
+    rect_def = " rectangle:xstart = 10,xstop=100,ystart=40,ystop=200,inside=0,outside=1;"
     mm = np.zeros( (400,400) )
     mask = make_mask(mm,rect_def+circle_def)
     plt.imshow(mask);plt.colorbar(); plt.show()

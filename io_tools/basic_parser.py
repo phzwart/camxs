@@ -42,21 +42,28 @@ def read_and_parse(filename):
             category      = keys[0].strip()
             instructions  = keys[1].strip()
             instructions = parse_instructions(instructions)
-            results[category]=instructions
+            # here we have to check if we already have something with that category.
+            # if so, we want to create a list of instructions instead
+            if results.has_key( category ):
+                results[category] = [ results[category]  ] 
+                results[category].append( instructions  ) 
+            else:
+                results[category]=instructions
     return results
     
 def tst():
     f = open('tst.def','w')
-    print >> f,'biryani:cups=4,rice=basmathi,meat=chicken,eggs=7,chili=3.4,spicy=True,  vegetarian=False;'
+    print >> f,'biryani:cups=4,rice=basmathi,meat=chicken,eggs=7,chili=3.4,spicy=True,  vegetarian=False; biryani:cups=5,rice=no;'
     f.close()
     results = read_and_parse('tst.def')
     ideal = {'biryani': {'cups': 4, 'meat': 'chicken', 'eggs': 7, 'spicy': True, 'chili': 3.4, 'rice': 'basmathi', 'vegetarian': False}}
     for key in results:
-        instructions_1 = results[key]
+        instructions_1 = results[key][0]
         instructions_2 = ideal[key] 
         for item in instructions_1.keys():
             val_1 = instructions_1[item]
             val_2 = instructions_2[item]
             assert val_1 == val_2
+
 if __name__ == "__main__":
     tst()
