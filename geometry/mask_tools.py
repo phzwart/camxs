@@ -94,8 +94,6 @@ def rectangle(Nx,Ny,params):
     mask[selx,sely]=inside
     return mask
 
-
-
 def auto_mask(img,val=0):
     sel = (img==val)
     mask = img*0.0+1
@@ -111,7 +109,7 @@ def make_mask(panel, mask_defs):
     masks = []
     for key in params.keys():
         for this_param in params[key]:
-            mask = build_it[key](Nx,Ny,this_param)            
+            mask = build_it[key](Nx,Ny,this_param.strip())            
             masks.append(mask)
     result = masks[0]
     if len(masks)>1:

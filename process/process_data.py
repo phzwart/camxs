@@ -200,7 +200,19 @@ def run(inputs):
        this_mask  = panel_masks[kk]
        tot_int_mean += np.sum( this_panel*this_mask )
 
-   process_images = h5_io.h5_file_pointer( inputs['data']['filename'], what='/data/cart_data', path='' )
+
+   #--------------------------------------------------
+   # here we actually process the data
+   process_images = h5_io.h5_file_pointer( inputs['data']['filename'], 
+                                            what=inputs['data']['data_path'], path='' )
+
+   # these parameters govern selection of images
+   cc_lims  = (inputs['selection']['cc_low'], inputs['selection']['cc_high']) 
+   int_lims = (inputs['selection']['I_count_low'], inputs['selection']['I_count_high'])
+
+
+   selected_images = []
+
    for KK in range( inputs['data']['process_start'] , inputs['data']['process_stop'] ):
        img = process_images[KK,:,:]
        # first we split the data
@@ -216,13 +228,30 @@ def run(inputs):
            pscore = img_compare( this_panel, mean_panel, this_sel)
            img_score += pscore
            tot_int   += np.sum( this_panel*this_mask ) 
-       img_scores.append( 0.5*img_score  )
+
+       img_score = img_score/2.0
+       #print cc_lims[0],cc_lims[1],int_lims[0],int_lims[1], img_score, tot_int
+       if img_score > cc_lims[0]:
+           if img_score < cc_lims[1]:
+               if tot_int > int_lims[0] :
+                   if tot_int < int_lims[1]:
+                       selected_images.append( KK  ) 
+
+       img_scores.append( img_score  )
        tot_ints.append( tot_int  )
-       print img_score, tot_int 
-   plt.plot( range(len(tot_ints)), tot_ints/tot_int_mean,    '.' ); plt.show()
-   plt.plot( range(len(img_scores)), img_scores, '.' ); plt.show()    
-   plt.plot( tot_ints/tot_int_mean, img_scores, '.'         ); plt.show()
+       print KK, img_score, tot_int, len(selected_images)
+
+
+   sel_imgs = open('selected_images.pickle','w')
+   pickle.dump( selected_image, sel_imgs)
+   sel_imgs.close()
+
+   #plt.plot( range(len(tot_ints)), tot_ints/tot_int_mean,    '.' ); plt.show()
+   #plt.plot( range(len(img_scores)), img_scores, '.' ); plt.show()    
+   #plt.plot( tot_ints/tot_int_mean, img_scores, '.'         ); plt.show()
    
+   print len(selected_images)
+
 
 
 if __name__ == "__main__":

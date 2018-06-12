@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from io_tools import saxs_tools
+
 class to_polar(object):
     def __init__(self, img, mask):
         self.mask = mask
@@ -48,12 +50,12 @@ class to_polar(object):
             var    = np.mean( sel_img[sel]*sel_img[sel] ) - mean*mean
             I_val[ii]     = mean
             sig_val[ii]   =  np.sqrt(var)
-
-        return r_val, I_val,sig_val
+        saxs = saxs_tools.curve(r_val, I_val,sig_val)
+        return saxs
 
     def try_beam_center_variance(self, cx, cy, bins=300):
-        r,I,s = self.get_saxs(cx,cy,bins) 
-        score = np.sum( s*s )
+        saxs = self.get_saxs(cx,cy,bins) 
+        score = np.sum( saxs.s*saxs.s )
         return -score 
 
 
@@ -79,10 +81,12 @@ def grid_maker(x_range, y_range,N):
     cys = range(y_range[0], y_range[1], N)
     return cxs, cys
 
-def slow_center_finder( img, mask, cx_range, cy_range,trials=4):
+def slow_center_finder( img, mask, cx_range, cy_range,trials=1):
+    print cx_range
+    print cy_range
     polar_object = to_polar( img, mask )
 
-    M  = 32
+    M  = 4
     best_x = None
     best_y = None
     print('First we do a very rough probing of where the beamcenter lies.')
@@ -90,8 +94,9 @@ def slow_center_finder( img, mask, cx_range, cy_range,trials=4):
     for ii in range(trials):
         cxs, cys      = grid_maker(cx_range, cy_range,M)
         best_x,best_y = grid_search(polar_object.try_beam_center_stupid,cxs,cys)
-        cx_range = (best_x-M*4, best_x+M*4)
-        cy_range = (best_y-M*4, best_y+M*4)
+        print best_x, best_y
+        cx_range = (best_x-M, best_x+M)
+        cy_range = (best_y-M, best_y+M)
         M = M//2 
 
     M = 2 
@@ -112,10 +117,10 @@ def slow_center_finder( img, mask, cx_range, cy_range,trials=4):
         if ii%100==0:
             print('Now at Iteration', ii)
      
-    r,I,s = polar_object.get_saxs(best_x,best_y)
-    plt.plot(r,np.log(I) ); plt.plot(r,np.log(s)); plt.show();
+    saxs = polar_object.get_saxs(best_x,best_y)
+    #plt.plot(saxs.q,np.log(saxs.I) ); plt.plot(saxs.q,np.log(saxs.s)); plt.show();
     print 'Best beam center found:', best_x, best_y
-    return best_x, best_y, r,I,s
+    return best_x, best_y, saxs
 
 
     
