@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+import sys,os
+from process import index_run
+ 
+if __name__ == "__main__":
+    inputs = None
+    interactive = False
+    if len(sys.argv)>1:
+        inputs = sys.argv[1]
+        if os.path.isfile(inputs):
+            inputs = open(inputs,'r')
+        if len(sys.argv)>2:
+            if sys.argv[2] =='pilot':
+               interactive=True
+        index_run.run( inputs, interactive )
+    if len(sys.argv)==1:
+        index_run.run(None,None)
+

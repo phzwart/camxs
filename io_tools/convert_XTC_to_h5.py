@@ -89,7 +89,7 @@ def getAssembledImg(evt,det,cmpars=None,assemble=False):
 
 
 def run(config) :
-    params = basic_parser.read_and_parse(  open(config,'r') , default_parameters  )
+    params = basic_parser.read_and_parse(  config , default_parameters  )
     params.show()
 
     h5_fname    = params.output.filename 
