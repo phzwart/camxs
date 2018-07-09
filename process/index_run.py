@@ -23,8 +23,8 @@ data_field = adu_front
 [template]
 median_file         = None
 sigma_file          = None
-display_range       = (0.6,1.0)
-display_bins        = 10 
+display_range       = (0.0,4.0)
+display_bins        = 40 
 
 
 [output]
@@ -47,9 +47,9 @@ class template_classes(object):
     def __init__(self, low_score, high_score, n_bins):
         tmp = np.linspace( low_score, high_score, n_bins + 1)
         self.n_bins = n_bins
-        self.low_score = low_score
-        self. high_score =  high_score
-        self.lim_low  = tmp[    : -1 ]
+        self.low_score  = low_score
+        self.high_score =  high_score
+        self.lim_low  = tmp[ 0  : -1 ]
         self.lim_high = tmp[  1 :    ]
         self.NN = self.lim_high*0.0
         self.center   = ( self.lim_low + self.lim_high )/2.0 
@@ -74,7 +74,7 @@ class template_classes(object):
             tmp = obj.current_median()
             if tmp is not None:
                 etmp = equalize(tmp)
-                title = ' CC to template = %4.3f ; N = %3.2e\n'%(cc,NN)
+                title = ' Z-score to template = %4.3f ; N = %3.2e\n'%(cc,NN)
                 filename = filename_base + '_template_cc_%4.3f'%cc+'.png'
                 plotters.plot_equalized_template(etmp, filename, display, title=title)
 
@@ -126,7 +126,10 @@ def run(config, interactive):
     cc_name = params.output.filename_base + '_cc_scores' 
     z_name = params.output.filename_base + '_z_scores'
 
-    median_range_object = template_classes(0,10,10)
+    median_range_object = template_classes(    params.template.display_range[0], 
+                                               params.template.display_range[1], 
+                                           int(params.template.display_bins)     )
+    
 
     for nn in range(N_images):
         img = data_f[nn,:,:]
