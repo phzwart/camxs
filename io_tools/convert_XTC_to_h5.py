@@ -202,9 +202,9 @@ def run(config) :
                 faults += 1
 
             adu_front  = panel_tools.slab_data(adu_front).astype('float32')
-            #adu_back   = getAssembledImg(evt,detList[1],cmpars=back_comm_mode_pars,assemble=False)
-            #adu_back   = panel_tools.slab_data(adu_back).astype('float32')
-            #adu_back = np.zeros((1024,1024)) 
+
+            #adu_back, ok   = getAssembledImg(evt,detList[1],cmpars=back_comm_mode_pars,assemble=False)
+            #adu_back       = panel_tools.slab_data(adu_back).astype('float32')
         else:
             faults += 1
         if adu_front_ds is None:
