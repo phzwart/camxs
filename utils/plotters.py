@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-def intensity_histogram( data, bins, x_label, y_label, legend, filename, markers , display=False):
+def intensity_histogram( data, bins, x_label, y_label, legend, filename, markers , display=True):
     plt.figure(figsize=(18,10), facecolor='w')
     # first make a simple histogram
     plt.hist( data, bins, alpha=0.7, label=legend)
@@ -38,31 +38,35 @@ def plot_equalized_template(img, filename, display=False, title=None):
     fig.savefig(filename)
     if display:
         fig.show()
-    
 
-def plot_run_summaries(ccs, filename, display=False):
-    N = len(ccs)
+def plot_run_summaries(scores, filename, display=False):
+    N = len(scores)
     t = np.arange(N)
   
     # first we plot a trace
  
     fig,ax = plt.subplots( 1, figsize=(18,10), facecolor='w')
-    ax.plot( t, ccs, '.' )
+    ax.semilogy( t, scores, '.', markersize=0.5 )
+    ax.semilogy( t, scores*0+0.5, '--',c='black' )
+    ax.semilogy( t, scores*0+1.0, '-',c='black' )
+    ax.semilogy( t, scores*0+2.0, '-.',c='black' )
+    ax.legend( ['Data','Z-score = 0.5', 'Z-score = 1.0','Z-score = 2.0', ] )
+
     ax.set_xlabel('Image Index', fontsize=20 )
-    ax.set_ylabel('Template correlation', fontsize=20 )
+    ax.set_ylabel('Template score', fontsize=20 )
     ax.tick_params(axis='both', which='major', labelsize=18)
     ax.tick_params(axis='both', which='minor', labelsize=15)
-    fig.savefig(filename+'.cc_trace.png')
+    fig.savefig(filename+'.score_trace.png')
     if display:
         fig.show()
 
     # now we do a histogram
     fig2,ax2 = plt.subplots(1, figsize=(18,10), facecolor='w')
     # first make a simple histogram
-    ax2.hist( ccs, bins=100, alpha=0.7, label='Template correlation')
+    ax2.hist( scores, bins=100, range=(0,6), alpha=0.7, label='Template score')
 
     # now plot the marker lines as vertical lines
-    ax2.set_xlabel('Correlation', fontsize=20)
+    ax2.set_xlabel('Z-score', fontsize=20)
     ax2.set_ylabel('Occurance', fontsize=20)
 
     ax2.tick_params(axis='both', which='major', labelsize=18)
@@ -70,7 +74,7 @@ def plot_run_summaries(ccs, filename, display=False):
 
     ax2.set_yscale('log', nonposy='clip')
     ax2.legend()
-    fig2.savefig(filename+'.cc_histogram.png')
+    fig2.savefig(filename+'.score_histogram.png')
     if display:
         fig2.show()    
     

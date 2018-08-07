@@ -70,20 +70,20 @@ class ReservoirSampler(object):
     
 
     def current_median(self):
-        assert self.count > self.N
+        assert self.count >= self.N
         median = np.median( self.reservoir, axis=0 )
         return median
 
     def percentiles(self, p):
-        assert self.count > self.N
+        assert self.count >= self.N
         percentile_low  = np.percentile( self.reservoir, p, axis=0)
         percentile_high = np.percentile( self.reservoir, 100-p, axis=0)
         return percentile_low,percentile_high
 
     def sigma(self):
-        a,b = self.percentiles(10)
+        a,b = self.percentiles(25)
         d = b-a
-        sigma_image = 0.5*d/1.281551565545
+        sigma_image = d/1.34
         return sigma_image
 
 

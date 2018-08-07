@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 import sys
 import matplotlib.pyplot as plt
 
@@ -24,10 +25,24 @@ class mask_def(object):
         self.inside  = 0.0+vals[4]
         self.outside = 1.0-self.inside
 
+def quick_mask(shape, params):
+    f = open(params,'r')
+    defs = []
+    for line in f:
+        keys = line.split()
+        tmp = []
+        for key in keys:
+            tmp.append( int(key) )
+        defs.append( mask_def(tmp) )
+    f.close()
+    mask = np.zeros(shape) + 1
+    for md in defs:
+        mask = mask*make_mask_rect(shape, md)
+    return mask
 
 
-def run(img_name,params):
-    img = np.load(img_name)
+def run(f,params):
+    img = h5py.File(f,'r')['/template/median'].value
     defs =  []
     f = open(params,'r')
     for line in f:
@@ -42,8 +57,7 @@ def run(img_name,params):
     for md in defs:
         mask = mask*make_mask_rect(img.shape, md)
     np.save( 'mask', mask )
-    fname = str(img_name[0:-4])+'_masked.png' 
-    print fname
+    fname= 'tmp_mask.png'
     plotters.plot_equalized_template( mask*img, fname, True  ) 
 
 
