@@ -21,7 +21,7 @@ def native_data(pnccd_ij):
     return pnccd_np
 
 
-asics = { '00': ( (  0, 512), (   0, 128) ) ,
+default_asics = { '00': ( (  0, 512), (   0, 128) ) ,
           '01': ( (  0, 512), ( 128, 256) ) ,
           '02': ( (  0, 512), ( 256, 384) ) ,
           '03': ( (  0, 512), ( 384, 512) ) ,
@@ -43,7 +43,7 @@ asics = { '00': ( (  0, 512), (   0, 128) ) ,
         } 
 
 
-borders = {  '00': {'01': ((0,512),(126,130))                            },
+default_borders = {  '00': {'01': ((0,512),(126,130))                            },
              '01': {'00': ((0,512),(126,130)), '02': ((0,512),(254,258)) },
              '02': {'01': ((0,512),(254,258)), '03': ((0,512),(382,386)) },
              '03': {'03': ((0,512),(382,386))                            },
@@ -64,7 +64,10 @@ borders = {  '00': {'01': ((0,512),(126,130))                            },
              '33': {'33': ((0,512),(894,898))                            }
           }
 
-def build_asic_mask():
+def build_asic_mask(asics=None):
+    if asics is None:
+        asics = default_asics
+
     asic_masks = {}
     for key in asics:
         tmp = np.zeros((1024,1024)) 
@@ -77,8 +80,8 @@ def build_asic_mask():
 
 
 
-def equalize(median_img):
-    n_bins = 1000
+def equalize(median_img, M=10000):
+    n_bins = M
     image_histogram, image_bins = np.histogram( median_img.flatten() , bins=n_bins, normed=True  )
     for ii in range(1,n_bins):
         image_histogram[ii] += image_histogram[ii-1]
