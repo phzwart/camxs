@@ -3,7 +3,7 @@ import h5py
 import matplotlib.pyplot as plt
 import sys,os
 from io_tools import basic_parser, h5_io, saxs_tools
-from utils import fast_median_calculator, plotters, panel_tools, mask_tools, geometrized_panel, cointegration
+from utils import fast_median_calculator, plotters, panel_tools, mask_tools, geometrized_panel
 from utils.golden_section_search import gss 
 from utils import piecewise_fit
 
@@ -19,8 +19,8 @@ class template_object(object):
         self.ref_curve = ref_curve
 
 
-    def split_asics(self, geometry):
-        full_asic_masks = panel_tools.build_asic_mask()
+    def split_asics(self, geometry, asics=None):
+        full_asic_masks = panel_tools.build_asic_mask(asics)
         split_asic_masks = []
         for split_def in geometry.split:        
             tmp = {}
@@ -68,18 +68,17 @@ class template_object(object):
        return panel_offset+offset_mask, converged, max_offset
 
 
-    def fixit(self, geometry, max_iter=30):
+    def fixit(self, geometry, asics=None, max_iter=30):
         self.split_median   = []
         self.split_sigma    = []
         self.split_geometry = []
         self.split_mask     = []
         self.split_splits   = geometry.split      
  
-        self.split_asic_masks = self.split_asics(geometry)
+        self.split_asic_masks = self.split_asics(geometry,asics)
 
         self.offset_masks   = []
         self.beam_offsets   = []
-
 
         for split_def, geom  in zip(geometry.split,geometry.cxcydz):
             sel_x = slice( split_def[0][0],split_def[0][1], 1 )
@@ -96,6 +95,7 @@ class template_object(object):
             self.split_sigma.append( this_panel_sigma )
             self.split_geometry.append( this_geometry )
             self.split_mask.append( this_panel_mask )
+        
 
         for img,mask,geom,asics in zip(self.split_median, 
                                        self.split_mask, 
@@ -157,7 +157,7 @@ class template_object(object):
 
         
     def build_offset_image(self):
-        offsets = np.zeros((1024,1024))
+        offsets = sel.median*0.0 # np.zeros((1024,1024))
         for pedestal, split_def in zip(self.offset_masks, self.split_splits):
             sel_x = slice( split_def[0][0],split_def[0][1], 1 )
             sel_y = slice( split_def[1][0],split_def[1][1], 1 ) 
