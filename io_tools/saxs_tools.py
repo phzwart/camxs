@@ -1,5 +1,46 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from   scipy.stats import linregress
+
+
+def guinier(q,Rg,LnI0, factor=1.2):
+    y_calc = LnI0 - Rg*Rg*q*q/3.0
+    sel = q *Rg < factor
+    return y_calc, sel
+
+def rg_estimate(curve,window=8):
+    q = curve.q
+    I = curve.I
+    sel = I!=0
+    q = q[sel]
+    I = I[sel]
+
+    x = q*q
+    y = np.log(I)
+
+    Rgs   = []
+    lnI0s = []
+    scores = []
+    
+    for ii in range(0, len(x)-window):
+        slope,intercept,r,p,stderr = linregress(x[ii:ii+window],y[ii:ii+window])
+        Rg = np.sqrt( -slope*3.0 )
+        LnI0 = intercept
+        if not np.isnan(Rg):
+            y_calc,sel = guinier(q,Rg,LnI0)
+            score_vals  = np.median( np.abs( (y[sel]-y_calc[sel]) / np.abs(y[sel]) )    )
+            scores.append( score_vals )
+            Rgs.append(Rg)
+            lnI0s.append(LnI0)
+    scores = np.array(scores)
+    Rgs = np.array(Rgs)
+    lnI0s = np.array(lnI0s)
+    Rg_final = 0
+    LnIo_final = -100
+    Rg_final   = np.sum(Rgs/(1e-5+scores)) / np.sum( 1.0/(scores+1e-5) )
+    LnIo_final = np.sum(lnI0s/(1e-5+scores)) / np.sum( 1.0/(scores+1e-5) )
+    return Rg_final, LnIo_final
+ 
 
 
 class curve(object):
