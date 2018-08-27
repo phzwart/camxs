@@ -8,7 +8,7 @@ from io_tools import h5_io, basic_parser, saxs_tools
 
 
 class selection_builder(object):
-    def __init__(self,q_object,phi_object,corrections,N=500):
+    def __init__(self,q_object,phi_object,corrections,N=128):
         self.q_object   = q_object    # do i need to keep this around?
         self.phi_object = phi_object
         self.corrections= corrections
@@ -63,19 +63,32 @@ class selection_builder(object):
         mean_curve   = saxs_tools.curve(this_q,I,s)
         return mean_curve
 
-    def q_ring( self, q_bin, img, mask, delta_phi ):
+    def q_ring( self, q_bin, img, mask, Nphi ):
+        bphi = np.arange(Nphi)
+        delta_phi = np.pi*2.0/Nphi
+        result = np.zeros(Nphi)
+        mask_mask = np.zeros(Nphi) + 0
         sel       = self.sel[q_bin]
         these_I   = img*mask
+        mask_vals = mask.flatten()[sel]
         these_I   = these_I.flatten()[sel]
         these_phi = self.phi_object.flatten()[sel] 
-        order = np.argsort(these_phi)
-        these_phi = these_phi[ order ]
-        these_I   = these_I[ order ]
-        
-        return these_phi, these_I
 
-        
-  
+        order = np.argsort(these_phi)
+        these_phi = these_phi[ order ] + np.pi
+        phi_bins  = (np.floor(these_phi/delta_phi) ).astype(np.int)
+
+        these_I   = these_I[ order ]
+        # place the observed intensities
+        result[phi_bins] = these_I
+
+        #indicate where the mask is
+        mask_vals = mask_vals[order]
+        msel = mask_vals > 0.9
+        masked_phi_bins = phi_bins[ msel ] 
+        mask_mask[ masked_phi_bins ] = 1
+        result = result * mask_mask  - (1.0-mask_mask) * 1000
+        return result
           
  
 class q_container(object):
@@ -85,10 +98,8 @@ class q_container(object):
         self.Corrections = Corrections
         self.selections  = selections
 
-
-
 class detector_panel(object):
-    def __init__(self, img_shape, pixel_size, distance, wavelength, center, delta_pixel=1):
+    def __init__(self, img_shape, pixel_size, distance, wavelength, center, delta_pixel=1, Nq=None):
         # Store setup parameters
         self.pixel_size  =  pixel_size     # in meter
         self.distance    =  distance       # in meter
@@ -101,6 +112,9 @@ class detector_panel(object):
         self.x           = np.linspace( 0, self.img_shape[1]-1, self.img_shape[1]  )
         self.y           = np.linspace( 0, self.img_shape[0]-1, self.img_shape[0]  )
         self.Y,self.X    = np.meshgrid(self.x,self.y)
+        self.Nq = Nq
+        if self.Nq is None:
+            self.Nq = int(self.img_shape[1]//2)
 
         self.delta_indices, self.Q_Phi_Corr_Sel  = self.compute_Q_Phi_maps(self.delta_pixel)
 
@@ -113,7 +127,7 @@ class detector_panel(object):
         pd = self.distance/self.pixel_size
         Solid_Angle = self.pixel_size*self.distance/( np.power(dX*dX +dY*dY + pd*pd, 1.5 ) )
         Solid_Angle = Solid_Angle / np.max(Solid_Angle)
-        sel_object  = selection_builder( Q, Phi, Solid_Angle )
+        sel_object  = selection_builder( Q, Phi, Solid_Angle, self.Nq )
         return Q,Phi,Solid_Angle, sel_object 
 
 
@@ -145,10 +159,24 @@ class detector_panel(object):
         mean = sel_obj.selections.get_saxs(img, mask, no_corrections=no_corrections, q_min=q_min, q_max=q_max)
         return mean
 
-    def q_ring(self, q_bin, img, mask, dx, dy, delta_phi=2.0*np.pi/2048 ):
+    def q_ring(self, q_bin, img, mask, dx, dy, Nphi ): #delta_phi=2.0*np.pi/2048 ):
         sel_obj = self.Q_Phi_Corr_Sel[ self.delta_indices[ (dx,dy) ] ]
-        ring    = sel_obj.selections.q_ring( q_bin, img, mask, delta_phi )
+        ring    = sel_obj.selections.q_ring( q_bin, img, mask, nphi )
         return ring
+
+    def all_rings(self, img, mask, dx, dy,  nphi):
+        delta_phi= 2.0*np.pi/nphi
+        sel_obj = self.Q_Phi_Corr_Sel[ self.delta_indices[ (dx,dy) ] ]
+        these_q_bins = sel_obj.selections.q
+        rings = []
+        M = len(these_q_bins)
+        phi = None
+        for mm in range(M):
+            I = sel_obj.selections.q_ring( mm, img, mask, nphi ) 
+            rings.append( I )
+        rings = np.array(rings).reshape((M,nphi))
+        #plt.imshow(np.log(rings+1e-1),interpolation='none'); plt.show()
+        return these_q_bins,rings
 
 
 
@@ -175,6 +203,22 @@ class detector_panel(object):
                 curve = saxs_tools.curve( curve.q[Nl:Nh],curve.I[Nl:Nh], curve.s[Nl:Nh])
                 distance,score = self.refine_distance( curve, ref_curve)         
                 print dx,dy,distance,score
+
+
+    def mimimum_variance_saxs_center(self,img,mask,power=0.33):
+        dxy = np.arange(-self.delta_pixel,self.delta_pixel+1)
+        scores = []
+        displacement_pairs = []
+        for dx in dxy:
+            for dy in dxy:
+                displacement_pairs.append( (dx,dy)  ) 
+                s = self.get_saxs( img, mask, dx, dy, True)
+                score = np.sum( np.power( s.q, power )*s.s*s.s )
+                scores.append(score)
+        tt = np.argmin( scores )
+        return displacement_pairs[ tt ] 
+
+
 
         
 
