@@ -8,7 +8,7 @@ from io_tools import h5_io, basic_parser, saxs_tools
 
 
 class selection_builder(object):
-    def __init__(self,q_object,phi_object,corrections,N=128):
+    def __init__(self,q_object,phi_object,corrections,N=500):
         self.q_object   = q_object    # do i need to keep this around?
         self.phi_object = phi_object
         self.corrections= corrections
@@ -178,6 +178,7 @@ class detector_panel(object):
         #plt.imshow(np.log(rings+1e-1),interpolation='none'); plt.show()
         return these_q_bins,rings
 
+        
 
 
     def refine_distance(self, saxs_curve, ref_curve, delta_d=0.010,N=10003):
@@ -214,6 +215,7 @@ class detector_panel(object):
                 displacement_pairs.append( (dx,dy)  ) 
                 s = self.get_saxs( img, mask, dx, dy, True)
                 score = np.sum( np.power( s.q, power )*s.s*s.s )
+                print dx, dy, score
                 scores.append(score)
         tt = np.argmin( scores )
         return displacement_pairs[ tt ] 
